@@ -1,22 +1,22 @@
 # Description:
-#   Interact with your hudson CI server
+#   Interact with your Jenkins CI server
 #
 # Dependencies:
 #   None
 #
 # Configuration:
-#   HUBOT_hudson_URL
-#   HUBOT_hudson_AUTH
+#   HUBOT_JENKINS_URL
+#   HUBOT_JENKINS_AUTH
 #
 #   Auth should be in the "user:password" format.
 #
 # Commands:
-#   hubot hudson b <jobNumber> - builds the job specified by jobNumber. List jobs to get number.
-#   hubot hudson build <job> - builds the specified hudson job
-#   hubot hudson build <job>, <params> - builds the specified hudson job with parameters as key=value&key2=value2
-#   hubot hudson list <filter> - lists hudson jobs
-#   hubot hudson describe <job> - Describes the specified hudson job
-#   hubot hudson last <job> - Details about the last build for the specified hudson job
+#   hubot jenkins b <jobNumber> - builds the job specified by jobNumber. List jobs to get number.
+#   hubot jenkins build <job> - builds the specified Jenkins job
+#   hubot jenkins build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2
+#   hubot jenkins list <filter> - lists Jenkins jobs
+#   hubot jenkins describe <job> - Describes the specified Jenkins job
+#   hubot jenkins last <job> - Details about the last build for the specified Jenkins job
 
 #
 # Author:
@@ -29,18 +29,18 @@ querystring = require 'querystring'
 # list.
 jobList = []
 
-hudsonBuildById = (msg) ->
+jenkinsBuildById = (msg) ->
   # Switch the index with the job name
   job = jobList[parseInt(msg.match[1]) - 1]
 
   if job
     msg.match[1] = job
-    hudsonBuild(msg)
+    jenkinsBuild(msg)
   else
-    msg.reply "I couldn't find that job. Try `hudson list` to get a list."
+    msg.reply "I couldn't find that job. Try `jenkins list` to get a list."
 
-hudsonBuild = (msg, buildWithEmptyParameters) ->
-    url = process.env.HUBOT_hudson_URL
+jenkinsBuild = (msg, buildWithEmptyParameters) ->
+    url = process.env.HUBOT_JENKINS_URL
     job = querystring.escape msg.match[1]
     params = msg.match[3]
     command = if buildWithEmptyParameters then "buildWithParameters" else "build"
@@ -48,37 +48,37 @@ hudsonBuild = (msg, buildWithEmptyParameters) ->
 
     req = msg.http(path)
 
-    if process.env.HUBOT_hudson_AUTH
-      auth = new Buffer(process.env.HUBOT_hudson_AUTH).toString('base64')
+    if process.env.HUBOT_JENKINS_AUTH
+      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.header('Content-Length', 0)
     req.post() (err, res, body) ->
         if err
-          msg.reply "hudson says: #{err}"
+          msg.reply "Jenkins says: #{err}"
         else if 200 <= res.statusCode < 400 # Or, not an error code.
           msg.reply "(#{res.statusCode}) Build started for #{job} #{url}/job/#{job}"
         else if 400 == res.statusCode
-          hudsonBuild(msg, true)
+          jenkinsBuild(msg, true)
         else
-          msg.reply "hudson says: Status #{res.statusCode} #{body}"
+          msg.reply "Jenkins says: Status #{res.statusCode} #{body}"
 
-hudsonDescribe = (msg) ->
-    url = process.env.HUBOT_hudson_URL
+jenkinsDescribe = (msg) ->
+    url = process.env.HUBOT_JENKINS_URL
     job = msg.match[1]
 
     path = "#{url}/job/#{job}/api/json"
 
     req = msg.http(path)
 
-    if process.env.HUBOT_hudson_AUTH
-      auth = new Buffer(process.env.HUBOT_hudson_AUTH).toString('base64')
+    if process.env.HUBOT_JENKINS_AUTH
+      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.header('Content-Length', 0)
     req.get() (err, res, body) ->
         if err
-          msg.send "hudson says: #{err}"
+          msg.send "Jenkins says: #{err}"
         else
           response = ""
           try
@@ -118,14 +118,14 @@ hudsonDescribe = (msg) ->
 
             path = "#{url}/job/#{job}/#{content.lastBuild.number}/api/json"
             req = msg.http(path)
-            if process.env.HUBOT_hudson_AUTH
-              auth = new Buffer(process.env.HUBOT_hudson_AUTH).toString('base64')
+            if process.env.HUBOT_JENKINS_AUTH
+              auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
               req.headers Authorization: "Basic #{auth}"
 
             req.header('Content-Length', 0)
             req.get() (err, res, body) ->
                 if err
-                  msg.send "hudson says: #{err}"
+                  msg.send "Jenkins says: #{err}"
                 else
                   response = ""
                   try
@@ -142,22 +142,22 @@ hudsonDescribe = (msg) ->
           catch error
             msg.send error
 
-hudsonLast = (msg) ->
-    url = process.env.HUBOT_hudson_URL
+jenkinsLast = (msg) ->
+    url = process.env.HUBOT_JENKINS_URL
     job = msg.match[1]
 
     path = "#{url}/job/#{job}/lastBuild/api/json"
 
     req = msg.http(path)
 
-    if process.env.HUBOT_hudson_AUTH
-      auth = new Buffer(process.env.HUBOT_hudson_AUTH).toString('base64')
+    if process.env.HUBOT_JENKINS_AUTH
+      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.header('Content-Length', 0)
     req.get() (err, res, body) ->
         if err
-          msg.send "hudson says: #{err}"
+          msg.send "Jenkins says: #{err}"
         else
           response = ""
           try
@@ -172,19 +172,19 @@ hudsonLast = (msg) ->
 
             msg.send response
 
-hudsonList = (msg) ->
-    url = process.env.HUBOT_hudson_URL
+jenkinsList = (msg) ->
+    url = process.env.HUBOT_JENKINS_URL
     filter = new RegExp(msg.match[2], 'i')
     req = msg.http("#{url}/api/json")
 
-    if process.env.HUBOT_hudson_AUTH
-      auth = new Buffer(process.env.HUBOT_hudson_AUTH).toString('base64')
+    if process.env.HUBOT_JENKINS_AUTH
+      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.get() (err, res, body) ->
         response = ""
         if err
-          msg.send "hudson says: #{err}"
+          msg.send "Jenkins says: #{err}"
         else
           try
             content = JSON.parse(body)
@@ -203,24 +203,24 @@ hudsonList = (msg) ->
             msg.send error
 
 module.exports = (robot) ->
-  robot.respond /h(?:udson)? build ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
-    hudsonBuild(msg, false)
+  robot.respond /j(?:enkins)? build ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
+    jenkinsBuild(msg, false)
 
-  robot.respond /h(?:udson)? b (\d+)/i, (msg) ->
-    hudsonBuildById(msg)
+  robot.respond /j(?:enkins)? b (\d+)/i, (msg) ->
+    jenkinsBuildById(msg)
 
-  robot.respond /h(?:udson)? list( (.+))?/i, (msg) ->
-    hudsonList(msg)
+  robot.respond /j(?:enkins)? list( (.+))?/i, (msg) ->
+    jenkinsList(msg)
 
-  robot.respond /h(?:udson)? describe (.*)/i, (msg) ->
-    hudsonDescribe(msg)
+  robot.respond /j(?:enkins)? describe (.*)/i, (msg) ->
+    jenkinsDescribe(msg)
 
-  robot.respond /h(?:udson)? last (.*)/i, (msg) ->
-    hudsonLast(msg)
+  robot.respond /j(?:enkins)? last (.*)/i, (msg) ->
+    jenkinsLast(msg)
 
-  robot.hudson = {
-    list: hudsonList,
-    build: hudsonBuild
-    describe: hudsonDescribe
-    last: hudsonLast
+  robot.jenkins = {
+    list: jenkinsList,
+    build: jenkinsBuild
+    describe: jenkinsDescribe
+    last: jenkinsLast
   }
