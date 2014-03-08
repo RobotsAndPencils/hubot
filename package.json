@@ -27,7 +27,8 @@
     "gitio": "1.0.1",
     "node-trello": "latest",
     "jsdom": "latest",
-    "jquery": "latest"
+    "jquery": "latest",
+    "githubot": "0.4.x"
   },
   "engines": {
     "node": ">= 0.8.x",
