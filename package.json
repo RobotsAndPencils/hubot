@@ -23,11 +23,7 @@
   "dependencies": {
     "hubot": ">= 2.6.0 < 3.0.0",
     "hubot-scripts": ">= 2.5.0 < 3.0.0",
-    "hubot-slack": "~2.0.3",
-    "gitio": "1.0.1",
-    "node-trello": "latest",
-    "jsdom": "latest",
-    "jquery": "latest"
+    "hubot-slack": "~2.0.3"
   },
   "engines": {
     "node": ">= 0.8.x",
