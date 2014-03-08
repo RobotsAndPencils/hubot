@@ -1,1 +1,1 @@
-["redis-brain.coffee", "shipit.coffee"]
+["redis-brain.coffee", "shipit.coffee", "travis.coffee", "trello.coffee", "rubygems.coffee", "git-help.coffee", "cheer.coffee"]
