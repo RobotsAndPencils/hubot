@@ -202,6 +202,37 @@ jenkinsList = (msg) ->
           catch error
             msg.send error
 
+jenkinsChangelog = (msg) ->
+    url = process.env.HUBOT_JENKINS_URL
+    job = querystring.escape msg.match[1]
+    buildNumber = msg.match[3]
+
+    path = "#{url}/job/#{job}/#{buildNumber}/api/json"
+
+    req = msg.http(path)
+
+    if process.env.HUBOT_JENKINS_AUTH
+      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+      req.headers Authorization: "Basic #{auth}"
+
+    req.header('Content-Length', 0)
+    req.get() (err, res, body) ->
+      msg.send "Finished"
+      if err
+        msg.send "Jenkins says: #{err}"
+      else
+        response = "Changelog for #{job} build #{buildNumber}:\n\n"
+        try
+
+          content = JSON.parse(body)
+
+          for item in content.changeSet.items
+            response += "* #{item.msg}\n"
+
+          msg.reply(response)
+        catch e
+          msg.send e
+
 module.exports = (robot) ->
   robot.respond /j(?:enkins)? build ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
     jenkinsBuild(msg, false)
@@ -218,9 +249,13 @@ module.exports = (robot) ->
   robot.respond /j(?:enkins)? last (.*)/i, (msg) ->
     jenkinsLast(msg)
 
+  robot.respond /j(?:enkins)? changelog ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
+    jenkinsChangelog(msg)
+
   robot.jenkins = {
     list: jenkinsList,
     build: jenkinsBuild
     describe: jenkinsDescribe
     last: jenkinsLast
+    changelog: jenkinsChangelog
   }
