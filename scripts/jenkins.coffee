@@ -217,7 +217,6 @@ jenkinsChangelog = (msg) ->
 
     req.header('Content-Length', 0)
     req.get() (err, res, body) ->
-      msg.send "Finished"
       if err
         msg.send "Jenkins says: #{err}"
       else
