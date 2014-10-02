@@ -14,13 +14,13 @@
 #   IDs should be in the "1|2" format where the order of the ID matches the jenkins instances
 #
 # Commands:
-#   hubot jenkins <ID> b <jobNumber> - builds the job specified by jobNumber. List jobs to get number. Uses the 
-#   hubot jenkins <ID> build <job> - builds the specified Jenkins job
-#   hubot jenkins <ID> build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2
-#   hubot jenkins <ID> list <filter> - lists Jenkins jobs
-#   hubot jenkins <ID> describe <job> - Describes the specified Jenkins job
-#   hubot jenkins <ID> last <job> - Details about the last build for the specified Jenkins job
-
+#   hubot jenkins <ID> b <jobNumber> - builds the job specified by jobNumber. List jobs to get number. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> build <job> - builds the specified Jenkins job. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2 The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> list <filter> - lists Jenkins jobs. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> describe <job> - Describes the specified Jenkins job. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> last <job> - Details about the last build for the specified Jenkins job. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> changelog <job>, <buildnumber> - Changelog for the specified Jenkins job and build number.
 #
 # Author:
 #   dougcole
@@ -242,16 +242,17 @@ jenkinsList = (msg) ->
             msg.send error
 
 jenkinsChangelog = (msg) ->
-    url = process.env.HUBOT_JENKINS_URL
-    job = querystring.escape msg.match[1]
-    buildNumber = msg.match[3]
+    env = querystring.escape msg.match[1]
+    url = whichURL(msg, env)
+    job = querystring.escape msg.match[2]
+    buildNumber = msg.match[4]
 
     path = "#{url}/job/#{job}/#{buildNumber}/api/json"
 
     req = msg.http(path)
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+    if whichAuth(msg, env)
+      auth = new Buffer(whichAuth(msg, env)).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.header('Content-Length', 0)
@@ -287,7 +288,7 @@ module.exports = (robot) ->
   robot.respond /j(?:enkins)? ([\w\.\-_ ]+) last (.*)/i, (msg) ->
     jenkinsLast(msg)
 
-  robot.respond /j(?:enkins)? changelog ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
+  robot.respond /j(?:enkins)? ([\w\.\-_ ]+) changelog ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
     jenkinsChangelog(msg)
 
   robot.jenkins = {
