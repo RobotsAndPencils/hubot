@@ -5,19 +5,22 @@
 #   None
 #
 # Configuration:
-#   HUBOT_JENKINS_URL
-#   HUBOT_JENKINS_AUTH
+#   HUBOT_JENKINS_URLS
+#   HUBOT_JENKINS_AUTHS
+#   HUBOT_JENKINS_IDS
 #
-#   Auth should be in the "user:password" format.
+#   URLs should be in the "http://jenkins1.example.com|http://jenkins2.example.com" format. 
+#   Auth should be in the "user:password|user:password" format where the order of the credential pairs matches the jenkins instances
+#   IDs should be in the "1|2" format where the order of the ID matches the jenkins instances
 #
 # Commands:
-#   hubot jenkins b <jobNumber> - builds the job specified by jobNumber. List jobs to get number.
-#   hubot jenkins build <job> - builds the specified Jenkins job
-#   hubot jenkins build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2
-#   hubot jenkins list <filter> - lists Jenkins jobs
-#   hubot jenkins describe <job> - Describes the specified Jenkins job
-#   hubot jenkins last <job> - Details about the last build for the specified Jenkins job
-
+#   hubot jenkins <ID> b <jobNumber> - builds the job specified by jobNumber. List jobs to get number. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> build <job> - builds the specified Jenkins job. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2 The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> list <filter> - lists Jenkins jobs. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> describe <job> - Describes the specified Jenkins job. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> last <job> - Details about the last build for the specified Jenkins job. The ID must match an entry in HUBOT_JENKINS_IDS
+#   hubot jenkins <ID> changelog <job>, <buildnumber> - Changelog for the specified Jenkins job and build number.
 #
 # Author:
 #   dougcole
@@ -28,6 +31,39 @@ querystring = require 'querystring'
 # instead of the job's name. Gets populated on when calling
 # list.
 jobList = []
+
+# Allow more than one instance of Jenkins to be accessed from the same bot
+jenkinsEnvURL = {}
+jenkinsEnvAuth = {}
+
+loadConfig = (msg) ->
+  
+  urls = process.env.HUBOT_JENKINS_URLS.split "|"
+  auths = process.env.HUBOT_JENKINS_AUTHS.split "|"
+  ids = process.env.HUBOT_JENKINS_IDS.split "|"
+  
+  if urls.length != ids.length or auths.length != ids.length
+    msg.reply "I can't tell which Jenkins to use. There is a mismatch in my configuration for how many environments you have."
+  
+  for id in ids
+    idx = ids.indexOf(id)
+  
+    jenkinsEnvURL[id] = urls[idx]
+    jenkinsEnvAuth[id] = auths[idx]
+
+whichURL = (msg, env) ->
+  
+  if Object.keys(jenkinsEnvURL).length == 0
+    loadConfig(msg)
+  
+  return jenkinsEnvURL[env]
+
+whichAuth = (msg, env) ->
+  
+  if Object.keys(jenkinsEnvAuth).length == 0
+    loadConfig(msg)
+    
+  return jenkinsEnvAuth[env]
 
 jenkinsBuildById = (msg) ->
   # Switch the index with the job name
@@ -40,16 +76,17 @@ jenkinsBuildById = (msg) ->
     msg.reply "I couldn't find that job. Try `jenkins list` to get a list."
 
 jenkinsBuild = (msg, buildWithEmptyParameters) ->
-    url = process.env.HUBOT_JENKINS_URL
-    job = querystring.escape msg.match[1]
-    params = msg.match[3]
+    env = querystring.escape msg.match[1]
+    url = whichURL(msg, env)
+    job = querystring.escape msg.match[2]
+    params = msg.match[4]
     command = if buildWithEmptyParameters then "buildWithParameters" else "build"
     path = if params then "#{url}/job/#{job}/buildWithParameters?#{params}" else "#{url}/job/#{job}/#{command}"
 
     req = msg.http(path)
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+    if whichAuth(msg, env)
+      auth = new Buffer(whichAuth(msg, env)).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.header('Content-Length', 0)
@@ -64,15 +101,16 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
           msg.reply "Jenkins says: Status #{res.statusCode} #{body}"
 
 jenkinsDescribe = (msg) ->
-    url = process.env.HUBOT_JENKINS_URL
-    job = msg.match[1]
+    env = querystring.escape msg.match[1]
+    url = whichURL(msg, env)
+    job = msg.match[2]
 
     path = "#{url}/job/#{job}/api/json"
 
     req = msg.http(path)
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+    if whichAuth(msg, env)
+      auth = new Buffer(whichAuth(msg, env)).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.header('Content-Length', 0)
@@ -118,8 +156,8 @@ jenkinsDescribe = (msg) ->
 
             path = "#{url}/job/#{job}/#{content.lastBuild.number}/api/json"
             req = msg.http(path)
-            if process.env.HUBOT_JENKINS_AUTH
-              auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+            if whichAuth(msg, env)
+              auth = new Buffer(whichAuth(msg, env)).toString('base64')
               req.headers Authorization: "Basic #{auth}"
 
             req.header('Content-Length', 0)
@@ -143,15 +181,16 @@ jenkinsDescribe = (msg) ->
             msg.send error
 
 jenkinsLast = (msg) ->
-    url = process.env.HUBOT_JENKINS_URL
-    job = msg.match[1]
+    env = querystring.escape msg.match[1]
+    url = whichURL(msg, env)
+    job = msg.match[2]
 
     path = "#{url}/job/#{job}/lastBuild/api/json"
 
     req = msg.http(path)
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+    if whichAuth(msg, env)
+      auth = new Buffer(whichAuth(msg, env)).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.header('Content-Length', 0)
@@ -173,12 +212,13 @@ jenkinsLast = (msg) ->
             msg.send response
 
 jenkinsList = (msg) ->
-    url = process.env.HUBOT_JENKINS_URL
-    filter = new RegExp(msg.match[2], 'i')
+    env = querystring.escape msg.match[1]
+    url = whichURL(msg, env)
+    filter = new RegExp(msg.match[3], 'i')
     req = msg.http("#{url}/api/json")
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+    if whichAuth(msg, env)
+      auth = new Buffer(whichAuth(msg, env)).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.get() (err, res, body) ->
@@ -203,16 +243,17 @@ jenkinsList = (msg) ->
             msg.send error
 
 jenkinsChangelog = (msg) ->
-    url = process.env.HUBOT_JENKINS_URL
-    job = querystring.escape msg.match[1]
-    buildNumber = msg.match[3]
+    env = querystring.escape msg.match[1]
+    url = whichURL(msg, env)
+    job = querystring.escape msg.match[2]
+    buildNumber = msg.match[4]
 
     path = "#{url}/job/#{job}/#{buildNumber}/api/json"
 
     req = msg.http(path)
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+    if whichAuth(msg, env)
+      auth = new Buffer(whichAuth(msg, env)).toString('base64')
       req.headers Authorization: "Basic #{auth}"
 
     req.header('Content-Length', 0)
@@ -233,22 +274,22 @@ jenkinsChangelog = (msg) ->
           msg.send e
 
 module.exports = (robot) ->
-  robot.respond /j(?:enkins)? build ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
+  robot.respond /j(?:enkins)? ([\w\.\-_ ]+) b(?:uild)? ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
     jenkinsBuild(msg, false)
 
-  robot.respond /j(?:enkins)? b (\d+)/i, (msg) ->
+  robot.respond /j(?:enkins)? ([\w\.\-_ ]+) b (\d+)/i, (msg) ->
     jenkinsBuildById(msg)
 
-  robot.respond /j(?:enkins)? list( (.+))?/i, (msg) ->
+  robot.respond /j(?:enkins)? ([\w\.\-_ ]+) list( (.+))?/i, (msg) ->
     jenkinsList(msg)
 
-  robot.respond /j(?:enkins)? describe (.*)/i, (msg) ->
+  robot.respond /j(?:enkins)? ([\w\.\-_ ]+) describe (.*)/i, (msg) ->
     jenkinsDescribe(msg)
 
-  robot.respond /j(?:enkins)? last (.*)/i, (msg) ->
+  robot.respond /j(?:enkins)? ([\w\.\-_ ]+) last (.*)/i, (msg) ->
     jenkinsLast(msg)
 
-  robot.respond /j(?:enkins)? changelog ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
+  robot.respond /j(?:enkins)? ([\w\.\-_ ]+) changelog ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
     jenkinsChangelog(msg)
 
   robot.jenkins = {
