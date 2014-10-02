@@ -31,6 +31,8 @@ querystring = require 'querystring'
 # instead of the job's name. Gets populated on when calling
 # list.
 jobList = []
+
+# Allow more than one instance of Jenkins to be accessed from the same bot
 jenkinsEnvURL = {}
 jenkinsEnvAuth = {}
 
@@ -49,7 +51,6 @@ loadConfig = (msg) ->
     jenkinsEnvURL[id] = urls[idx]
     jenkinsEnvAuth[id] = auths[idx]
 
-# Allows more than one instance of Jenkins to be accessed from the same bot
 whichURL = (msg, env) ->
   
   if Object.keys(jenkinsEnvURL).length == 0
