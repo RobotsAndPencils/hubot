@@ -248,6 +248,11 @@ jenkinsChangelog = (msg) ->
     job = querystring.escape msg.match[2]
     buildNumber = msg.match[4]
 
+    if msg.match[4]?
+      buildNumber = msg.match[4]
+    else
+      buildNumber = 'lastBuild'
+
     path = "#{url}/job/#{job}/#{buildNumber}/api/json"
 
     req = msg.http(path)
@@ -273,6 +278,38 @@ jenkinsChangelog = (msg) ->
         catch e
           msg.send e
 
+jenkinsBuildLog = (msg) ->
+    env = querystring.escape msg.match[1]
+    url = whichURL(msg, env)
+    job = querystring.escape msg.match[2]
+    buildNumber = msg.match[4]
+
+    if msg.match[4]?
+      buildNumber = msg.match[4]
+    else
+      buildNumber = 'lastBuild'
+
+    path = "#{url}/job/#{job}/#{buildNumber}/consoleText"
+
+    req = msg.http(path)
+
+    if whichAuth(msg, env)
+      auth = new Buffer(whichAuth(msg, env)).toString('base64')
+      req.headers Authorization: "Basic #{auth}"
+
+    req.header('Content-Length', 0)
+    req.get() (err, res, body) ->
+      if err
+        msg.send "Jenkins says: #{err}"
+      else
+        response = "Build log for #{job} build #{buildNumber}:\n\n"
+        try
+          response += body
+
+          msg.reply(response)
+        catch e
+          msg.send e
+
 module.exports = (robot) ->
   robot.respond /j(?:enkins)? ([\w\.\-_ ]+) b(?:uild)? ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
     jenkinsBuild(msg, false)
@@ -291,6 +328,9 @@ module.exports = (robot) ->
 
   robot.respond /j(?:enkins)? ([\w\.\-_ ]+) changelog ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
     jenkinsChangelog(msg)
+
+  robot.respond /j(?:enkins)? ([\w\.\-_ ]+) log ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
+    jenkinsBuildLog(msg)
 
   robot.jenkins = {
     list: jenkinsList,
