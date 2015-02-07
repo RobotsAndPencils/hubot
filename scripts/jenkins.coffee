@@ -102,6 +102,11 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
         console.log err
         return
       # Make an authorized request Jenkins.
+      
+      console.log '-*- OAuthTokens -*-'
+      console.log tokens
+      # req.headers Authorization: "Bearer #{auth}"
+      
       req.header('Content-Length', 0)
       req.post() (err, res, body) ->
           if err
