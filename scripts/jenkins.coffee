@@ -69,7 +69,7 @@ whichAuth = () ->
   if jenkinsEnvEmailAddress.length == 0
     loadConfig(msg)
   
-  authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['profile', 'email', 'openid'], jenkinsImpersonationEmail)
+  authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['profile', 'email'], jenkinsImpersonationEmail)
   
   return authClient
 
