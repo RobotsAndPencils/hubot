@@ -100,16 +100,9 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
         console.log err
         return
       # Make an authorized request to Jenkins using our OAuth tokens
-      
-      authToken = tokens['access_token']
-      req.headers Authorization: "Bearer #{authToken}"
-      req.auth null, null, true, authToken
-      
-      console.log req.headers
-      console.log req
-      
+            
       req.header('Content-Length', 0)
-      req.post() (err, res, body) ->
+      req.post().auth(null, null, true, authToken) (err, res, body) ->
           if err
             msg.reply "Jenkins says: #{err}"
           else if 200 <= res.statusCode < 400 # Or, not an error code.
@@ -118,6 +111,9 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
             jenkinsBuild(msg, true)
           else
             msg.reply "Jenkins says: Status #{res.statusCode} #{body}"
+
+      console.log req.headers
+      console.log req
       return
 
 jenkinsDescribe = (msg) ->
