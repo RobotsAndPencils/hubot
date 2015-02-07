@@ -67,7 +67,7 @@ whichAuth = () ->
   if jenkinsEnvEmailAddress.length == 0
     loadConfig(msg)
   
-  authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/admin.directory.group'], null)
+  authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/admin.directory.group'], 'automation@robotsandpencils.com')
   
   return authClient
 
