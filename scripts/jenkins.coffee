@@ -38,6 +38,7 @@ jobList = []
 jenkinsEnvURL = {}
 jenkinsEnvEmailAddress = ''
 jenkinsEnvPrivateKey = ''
+jenkinsImpersonationEmail = ''
 
 loadConfig = (msg) ->
   
@@ -46,6 +47,7 @@ loadConfig = (msg) ->
   
   jenkinsEnvEmailAddress = process.env.GOOGLE_AUTH_EMAIL_ADDRESS
   jenkinsEnvPrivateKey = process.env.PRIVATE_KEY_PEM
+  jenkinsImpersonationEmail = process.env.IMPERSONATE_EMAIL
   
   if urls.length != ids.length
    msg.reply "I can't tell which Jenkins to use. There is a mismatch in my configuration for how many environments you have."
@@ -67,7 +69,7 @@ whichAuth = () ->
   if jenkinsEnvEmailAddress.length == 0
     loadConfig(msg)
   
-  authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/admin.directory.group'], 'automation@robotsandpencils.com')
+  authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/admin.directory.group'], jenkinsImpersonationEmail)
   
   return authClient
 
