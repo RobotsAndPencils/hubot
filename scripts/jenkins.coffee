@@ -103,6 +103,7 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
       
       authToken = tokens['access_token']
       req.headers Authorization: "Bearer #{authToken}"
+      req.auth null, null, true, authToken
       
       console.log req.headers
       console.log req
