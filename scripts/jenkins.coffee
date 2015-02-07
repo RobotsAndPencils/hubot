@@ -71,6 +71,8 @@ whichAuth = () ->
   
   authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['profile', 'email'], jenkinsImpersonationEmail)
   
+  console.log jenkinsImpersonationEmail
+  
   return authClient
 
 jenkinsBuildById = (msg) ->
