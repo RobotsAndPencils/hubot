@@ -105,7 +105,10 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
       
       console.log '-*- OAuthTokens -*-'
       console.log tokens
-      # req.headers Authorization: "Bearer #{auth}"
+      
+      authType = tokens['token_type']
+      authToken = tokens['access_token']
+      req.headers Authorization: "#{authType} #{authType}"
       
       req.header('Content-Length', 0)
       req.post() (err, res, body) ->
