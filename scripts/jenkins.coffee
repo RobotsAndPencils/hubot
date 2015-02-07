@@ -101,14 +101,11 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
         console.log '-*- OAuthError -*-'
         console.log err
         return
-      # Make an authorized request Jenkins.
-      
-      console.log '-*- OAuthTokens -*-'
-      console.log tokens
+      # Make an authorized request to Jenkins using our OAuth tokens
       
       authType = tokens['token_type']
       authToken = tokens['access_token']
-      req.headers Authorization: "#{authType} #{authType}"
+      req.headers Authorization: "#{authType} #{authToken}"
       
       req.header('Content-Length', 0)
       req.post() (err, res, body) ->
