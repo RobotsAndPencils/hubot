@@ -69,7 +69,7 @@ whichAuth = () ->
   if jenkinsEnvEmailAddress.length == 0
     loadConfig(msg)
   
-  authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/admin.directory.group'], jenkinsImpersonationEmail)
+  authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['profile', 'email', 'openid'], jenkinsImpersonationEmail)
   
   return authClient
 
@@ -96,6 +96,7 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
     authClient = whichAuth()
     authClient.authorize (err, tokens) ->
       if err
+        console.log '-*- OAuthError -*-'
         console.log err
         return
       # Make an authorized request Jenkins.
