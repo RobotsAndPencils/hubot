@@ -26,6 +26,7 @@
 #   dougcole
 
 querystring = require 'querystring'
+google = require 'googleapis'
 
 # Holds a list of jobs, so we can trigger them with a number
 # instead of the job's name. Gets populated on when calling
@@ -41,6 +42,10 @@ loadConfig = (msg) ->
   urls = process.env.HUBOT_JENKINS_URLS.split "|"
   auths = process.env.HUBOT_JENKINS_AUTHS.split "|"
   ids = process.env.HUBOT_JENKINS_IDS.split "|"
+  
+  google_client_id = process.env.GOOGLE_AUTH_CLIENT_ID
+  google_email_address = process.env.GOOGLE_AUTH_EMAIL_ADDRESS
+  google_private_key = process.env.PRIVATE_KEY_PEM
   
   if urls.length != ids.length or auths.length != ids.length
     msg.reply "I can't tell which Jenkins to use. There is a mismatch in my configuration for how many environments you have."
@@ -85,20 +90,28 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
 
     req = msg.http(path)
 
-    if whichAuth(msg, env)
-      auth = new Buffer(whichAuth(msg, env)).toString('base64')
-      req.headers Authorization: "Basic #{auth}"
-
-    req.header('Content-Length', 0)
-    req.post() (err, res, body) ->
-        if err
-          msg.reply "Jenkins says: #{err}"
-        else if 200 <= res.statusCode < 400 # Or, not an error code.
-          msg.reply "(#{res.statusCode}) Build started for #{job} #{url}/job/#{job}"
-        else if 400 == res.statusCode
-          jenkinsBuild(msg, true)
-        else
-          msg.reply "Jenkins says: Status #{res.statusCode} #{body}"
+    # if whichAuth(msg, env)
+    #   auth = new Buffer(whichAuth(msg, env)).toString('base64')
+    #   req.headers Authorization: "Basic #{auth}"
+    
+    authClient = new (google.auth.JWT)(google_email_address, null, google_private_key, ['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/admin.directory.group'], null)
+    
+    authClient.authorize (err, tokens) ->
+      if err
+        console.log err
+        return
+      # Make an authorized request Jenkins.
+      req.header('Content-Length', 0)
+      req.post() (err, res, body) ->
+          if err
+            msg.reply "Jenkins says: #{err}"
+          else if 200 <= res.statusCode < 400 # Or, not an error code.
+            msg.reply "(#{res.statusCode}) Build started for #{job} #{url}/job/#{job}"
+          else if 400 == res.statusCode
+            jenkinsBuild(msg, true)
+          else
+            msg.reply "Jenkins says: Status #{res.statusCode} #{body}"
+      return
 
 jenkinsDescribe = (msg) ->
     env = querystring.escape msg.match[1]
