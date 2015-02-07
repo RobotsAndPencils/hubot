@@ -28,7 +28,8 @@
     "node-trello": "latest",
     "jsdom": "latest",
     "jquery": "latest",
-    "githubot": "0.4.x"
+    "githubot": "0.4.x",
+    "googleapis": "1.1.1"
   },
   "engines": {
     "node": ">= 0.8.x",
