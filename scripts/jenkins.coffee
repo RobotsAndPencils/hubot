@@ -70,9 +70,7 @@ whichAuth = () ->
     loadConfig(msg)
   
   authClient = new (google.auth.JWT)(jenkinsEnvEmailAddress, null, jenkinsEnvPrivateKey, ['profile', 'email'], jenkinsImpersonationEmail)
-  
-  console.log jenkinsImpersonationEmail
-  
+    
   return authClient
 
 jenkinsBuildById = (msg) ->
@@ -103,9 +101,11 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
         return
       # Make an authorized request to Jenkins using our OAuth tokens
       
-      authType = tokens['token_type']
       authToken = tokens['access_token']
-      req.headers Authorization: "#{authType} #{authToken}"
+      req.headers Authorization: "Bearer #{authToken}"
+      
+      console.log req.headers
+      console.log req
       
       req.header('Content-Length', 0)
       req.post() (err, res, body) ->
