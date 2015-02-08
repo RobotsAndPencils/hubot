@@ -102,9 +102,7 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
       # Make an authorized request to Jenkins using our OAuth tokens
       
       authToken = tokens['access_token']
-      # req.auth(null, null, true, authToken)
-      req.auth('david.anderson@robotsandpencils.com', authToken)
-      req.header('Authorization', 'Bearer #{authToken}')
+      req.header('Authorization', "Bearer #{authToken}")
       req.header('Content-Length', 0)
       
       console.log req
