@@ -103,11 +103,11 @@ jenkinsBuild = (msg, buildWithEmptyParameters) ->
       
       authToken = tokens['access_token']
       # req.auth(null, null, true, authToken)
-      req.auth('monkey', 'town')
+      req.auth('david.anderson@robotsandpencils.com', authToken)
       req.header('Authorization', 'Bearer #{authToken}')
       req.header('Content-Length', 0)
       
-      console.log req.headers
+      console.log req
       
       req.post() (err, res, body) ->
           if err
